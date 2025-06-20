@@ -7,10 +7,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { UserButton } from "@civic/auth-web3/react"
 import { isCivicAuthenticated, hasWallet } from "@/lib/civic"
 import { Leaf, Shield, Wallet, Heart } from "lucide-react"
+import Link from "next/link"
+import ContinueToDashboardButton from "./ContinueToDashboardButton"
 
 export default function LoginPage() {
   const [error, setError] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)
+  const [isAuthed, setIsAuthed] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -21,13 +24,12 @@ export default function LoginPage() {
 
     // Polling for authentication
     const interval = setInterval(() => {
-      if (isCivicAuthenticated() && hasWallet()) {
-        router.push("/dashboard");
-      }
+      const authed = isCivicAuthenticated() && hasWallet();
+      setIsAuthed(authed);
     }, 500);
 
     return () => clearInterval(interval);
-  }, [router]);
+  }, []);
 
   const handleLoginSuccess = () => {
     router.push("/dashboard")
@@ -91,6 +93,9 @@ export default function LoginPage() {
 
             {/* Login Button */}
             <UserButton className="w-full" />
+
+            {/* Continue to Dashboard Link (client component) */}
+            <ContinueToDashboardButton />
 
             <div className="text-xs text-center text-gray-500">
               By logging in, you agree to our Terms of Service and Privacy Policy

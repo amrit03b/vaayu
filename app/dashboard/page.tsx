@@ -1,199 +1,108 @@
-"use client"
+import { getUser } from "@civic/auth/nextjs";
+import { redirect } from "next/navigation";
+import DashboardClient from "./DashboardClient";
+import Link from "next/link";
+import ContinueToDashboardButton from "./ContinueToDashboardButton";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { AQIAlertCard } from "@/components/AQIAlertCard"
-import { getStoredWallet, clearWallet } from "@/lib/aptos"
-import { getStoredCivicUser, clearCivicUser, isCivicAuthenticated } from "@/lib/civic"
-import { User, Wallet, FileText, LogOut, Copy, CheckCircle, ArrowRight, Settings } from "lucide-react"
+export default async function DashboardPage() {
+  // Get user information on the server side
+  const user = await getUser();
 
-export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [copied, setCopied] = useState(false)
-  const router = useRouter()
-
-  const wallet = getStoredWallet()
-  const civicUser = getStoredCivicUser()
-
-  useEffect(() => {
-    // Check authentication
-    if (!isCivicAuthenticated() || !wallet) {
-      router.push("/login")
-    } else {
-      setIsLoading(false)
-    }
-  }, [router, wallet])
-
-  const handleCopyAddress = async () => {
-    if (wallet?.address) {
-      await navigator.clipboard.writeText(wallet.address)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }
-
-  const handleLogout = () => {
-    clearWallet()
-    clearCivicUser()
-    router.push("/login")
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
+  // Redirect to login if user is not authenticated
+  if (!user) {
+    redirect("/");
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-green-500 rounded-full">
-                <div className="w-4 h-4 text-white">🍃</div>
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="px-4 py-6 sm:px-0">
+          <div className="border-4 border-dashed border-gray-200 rounded-lg p-6 bg-white">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+              <DashboardClient />
+            </div>
+
+            {/* Welcome Section */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <h2 className="text-xl font-semibold text-blue-900 mb-2">
+                Welcome back, {user.name || user.email}!
+              </h2>
+              <p className="text-blue-700">
+                You have successfully logged in to your dashboard.
+              </p>
+            </div>
+
+            {/* User Information Card */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                User Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    User ID
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900">{user.id}</p>
+                </div>
+                {user.email && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Email
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">{user.email}</p>
+                  </div>
+                )}
+                {user.name && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Full Name
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">{user.name}</p>
+                  </div>
+                )}
+                {user.given_name && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Given Name
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">{user.given_name}</p>
+                  </div>
+                )}
+                {user.family_name && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Family Name
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">{user.family_name}</p>
+                  </div>
+                )}
+                {user.updated_at && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Last Updated
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {new Date(user.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
               </div>
-              <h1 className="text-xl font-bold">Vaayu Dashboard</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <CheckCircle className="w-3 h-3" />
-                Verified
-              </Badge>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Welcome Section */}
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome back!</h2>
-            <p className="text-gray-600">Monitor your environmental health and manage your wellness profile.</p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Main Actions */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Wallet Info Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wallet className="w-5 h-5" />
-                    Your Aptos Wallet
-                  </CardTitle>
-                  <CardDescription>Your secure blockchain wallet for health data storage</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                    <code className="flex-1 text-sm font-mono break-all">{wallet?.address}</code>
-                    <Button variant="ghost" size="sm" onClick={handleCopyAddress} className="shrink-0">
-                      {copied ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    This wallet is automatically generated and secured with your Civic identity
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Profile Setup Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    Health Profile Setup
-                  </CardTitle>
-                  <CardDescription>
-                    Complete your health profile to receive personalized recommendations
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Create Your Health Profile</p>
-                      <p className="text-sm text-gray-600">Tell us about your health conditions and preferences</p>
-                    </div>
-                    <Link href="/onboarding">
-                      <Button>
-                        Get Started
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="w-5 h-5" />
-                    Quick Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Link href="/onboarding">
-                      <Button variant="outline" className="w-full justify-start">
-                        <FileText className="w-4 h-4 mr-2" />
-                        Update Health Profile
-                      </Button>
-                    </Link>
-                    <Button variant="outline" className="w-full justify-start" disabled>
-                      <User className="w-4 h-4 mr-2" />
-                      View Health History
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        Soon
-                      </Badge>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
-            {/* Right Column - AQI and Alerts */}
-            <div className="space-y-6">
-              <AQIAlertCard />
-
-              {/* Account Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Account Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Civic ID:</span>
-                    <span className="font-mono text-xs">{civicUser?.userId.slice(-8)}...</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Status:</span>
-                    <Badge variant="secondary" className="text-xs">
-                      Verified
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Joined:</span>
-                    <span className="text-xs">{new Date().toLocaleDateString()}</span>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Quick Actions */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Quick Actions
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <ContinueToDashboardButton />
+              </div>
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
-  )
+  );
 }
